@@ -1,9 +1,8 @@
-src = wlr-layer-shell-unstable-v1.c xdg-shell.c
-obj = ${src:.c=.o} main.o
+src = xdg-shell.c
+otsake = ${src:.c=.h}
 xdg = /usr/share/wayland-protocols/stable/xdg-shell/xdg-shell.xml
-wlr = ../ohjelmat/dwl/protocols/wlr-layer-shell-unstable-v1.xml
 
-all: pää.out
+all: main.out
 
 xdg-shell.h: $(xdg)
 	wayland-scanner client-header $< $@
@@ -11,20 +10,11 @@ xdg-shell.h: $(xdg)
 xdg-shell.c: $(xdg)
 	wayland-scanner private-code $< $@
 
-wlr-layer-shell-unstable-v1.h: $(wlr) 
-	wayland-scanner client-header $< $@
+wlr-output-management-unstable-v1.c:
+	wayland-scanner private-code ${@:.c=.xml} $@
 
-wlr-layer-shell-unstable-v1.c: $(wlr) 
-	wayland-scanner private-code $< $@
+wlr-output-management-unstable-v1.h:
+	wayland-scanner client-header ${@:.h=.xml} $@
 
-%.o: %.c
-	gcc -c $< -g -Wall
-
-pää.o: main.c ${src} piirtäjä.h
-	gcc -c $< -g -Wall
-
-pää.out: xdg-shell.h piirtäjä.h $(obj)
-	gcc -o $@ $(obj) -lwayland-client -lwlroots -lrt
-
-testi.out: testi.c xdg-shell.c xdg-shell.h
-	gcc -o $@ $< xdg-shell.c -lwayland-client -lwlroots -lrt 
+main.out: main.c piirtäjä.h xdg-shell.c xdg-shell.h
+	gcc -Wall -g -o $@ main.c ${src} -lwayland-client -lwlroots -lrt `pkg-config --cflags --libs freetype2` -fPIC
