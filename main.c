@@ -20,11 +20,9 @@ struct wl_surface*    surface;
 struct xdg_surface*   xdgsurf;
 struct xdg_toplevel*  xdgtop;
 struct wl_buffer*     puskuri;
+struct wl_callback*   framekutsuja;
 
-const char kirjaimet[] = "selonita";
-int kirj_ind[sizeof(kirjaimet)-1];
-
-int jatkakoon = 1, xres=300, yres=300, muuttui;
+int jatkakoon = 1, saa_piirtää, xres=300, yres=300, muuttui;
 int kuvan_koko; // const paitsi funktiossa kiinnitä_kuva
 const int hmin = 36, wmin = 36;
 unsigned char* kuva;
@@ -111,6 +109,15 @@ static struct wl_registry_listener reg_listener = {
     .global_remove = registry_poistaja,
 };
 
+static void framekutsu(void*, struct wl_callback*, uint32_t);
+static const struct wl_callback_listener frame_listener = { framekutsu };
+static void framekutsu(void* data, struct wl_callback* kutsu, uint32_t aika) {
+    wl_callback_destroy(framekutsuja); framekutsuja=NULL;
+    framekutsuja = wl_surface_frame(surface);
+    wl_callback_add_listener(framekutsuja, &frame_listener, NULL);
+    saa_piirtää = 1;
+}
+
 int main() {
     assert((wl = wl_display_connect(NULL)));
     assert((wlreg = wl_display_get_registry(wl)));
@@ -120,6 +127,8 @@ int main() {
     vaadi(wl, "wl", kokoaja, "kokoaja", wlshm, "wl_shm", xdg_base, "xdg_wm_base", NULL);
 
     assert(( surface = wl_compositor_create_surface(kokoaja)          ));
+    framekutsuja = wl_surface_frame(surface);
+    wl_callback_add_listener(framekutsuja, &frame_listener, NULL);
     assert(( xdgsurf = xdg_wm_base_get_xdg_surface(xdg_base, surface) ));
     xdg_surface_add_listener(xdgsurf, &xdgsurflistener, NULL);
     assert(( xdgtop  = xdg_surface_get_toplevel(xdgsurf)              ));
@@ -129,12 +138,18 @@ int main() {
 
     alusta_teksti();
 
+    int kokonaan = 1;
     while (wl_display_dispatch(wl) > 0 && jatkakoon) { // tämä kutsunee kuuntelijat ja tekee poll-asian
-	usleep(1000000/30);
-	piirrä();
-	wl_surface_damage_buffer(surface, 0, 0, xres, yres);
-	wl_surface_attach(surface, puskuri, 0, 0); // tämä aina vapautuu automaattisesti
-	wl_surface_commit(surface);
+	usleep(1000000/50);
+	if(!saa_piirtää) continue;
+	saa_piirtää = 0;
+	if(kokonaan) {
+	    piirrä();
+	    wl_surface_damage_buffer(surface, 0, 0, xres, yres);
+	    wl_surface_attach(surface, puskuri, 0, 0); // tämä aina vapautuu automaattisesti
+	    wl_surface_commit(surface);
+	    kokonaan = 0;
+	}
     }
 
     vapauta_teksti();
@@ -144,6 +159,7 @@ int main() {
     xdg_toplevel_destroy(xdgtop); xdgtop=NULL;
     xdg_surface_destroy(xdgsurf); xdgsurf=NULL;
     wl_surface_destroy(surface); surface=NULL;
+    wl_callback_destroy(framekutsuja); framekutsuja=NULL;
 
     wl_shm_destroy(wlshm); wlshm=NULL;
     xdg_wm_base_destroy(xdg_base); xdg_base=NULL;

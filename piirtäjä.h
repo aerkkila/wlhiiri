@@ -1,6 +1,7 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <ft2build.h>
+#include <utf8proc.h>
 #include FT_FREETYPE_H
 
 FT_Library library;
@@ -39,26 +40,33 @@ static void alusta_teksti() {
     assert(!FT_Init_FreeType(&library));
     assert(!FT_New_Face(library, "/usr/share/fonts/liberation/LiberationMono-Regular.ttf", 0, &face));
     assert(!FT_Set_Pixel_Sizes(face, 0, 32)); // TODO
-    for(int i=0; i<sizeof(kirjaimet)-1; i++) {
-	kirj_ind[i] = FT_Get_Char_Index(face, kirjaimet[i]);
-    }
 }
 
-static void no_niin_ja_laitapas_nyt_sitten_teksti_vaikka_tuohon(const int* ind, int x, int y) {
+static void no_niin_ja_laitapas_nyt_sitten_teksti_vaikka_tuohon(const char* teksti, int y, int x) {
     int* ikuva = (int*)kuva;
-    while(*ind>=0) {
+    int pit = strlen(teksti);
+    int32_t merkit[pit];
+    if((pit = utf8proc_decompose((const utf8proc_uint8_t*)teksti, pit, merkit, pit, 0)) < 0)
+	warn("utf8proc_decompose");
+
+    for(int m=0; m<pit; m++) {
 	face->glyph->format = FT_GLYPH_FORMAT_BITMAP;
-	assert(!FT_Load_Glyph(face, kirj_ind[*ind++], 0));
+	int kirj_ind = FT_Get_Char_Index(face, merkit[m]);
+	assert(!FT_Load_Glyph(face, kirj_ind, 0));
 	assert(!FT_Render_Glyph(face->glyph, 0)); // TODO: pitäisikö siirtää alustukseen
 	FT_Bitmap *bitm = &face->glyph->bitmap;
 	FT_Glyph_Metrics *metrics = &face->glyph->metrics;
-	int bw = bitm->width, bh = bitm->rows, max = xres*yres;
+	int bw = bitm->width,
+	    bh = bitm->rows,
+	    max = xres*yres;
 	for(int j=0; j<bh; j++) {
 	    for(int i=0; i<bw; i++) {
 		unsigned arvo = ((unsigned char*)bitm->buffer)[bw*j + i];
-		int kuvaind = xres*(y+j-metrics->horiBearingY/64) + x + i; // TODO: kirjaimen suunta
-		if(kuvaind >= max) continue;
-		ikuva[kuvaind] = 0xff000000 + (arvo<<16) + (arvo<<8) + arvo;
+		int kuvaind = xres*(y+j-metrics->horiBearingY/64) + x + i;
+		if(kuvaind >= max || kuvaind < 0 || !arvo) continue;
+		if(arvo < 255)
+		    arvo = arvo*arvo/255;
+		ikuva[kuvaind] = (0xff<<24) + (arvo<<16) + (arvo<<8) + arvo;
 	    }
 	}
 	x += metrics->horiAdvance / 64;
@@ -72,11 +80,23 @@ static void vapauta_teksti() {
     library = (FT_Library){0};
 }
 
+int xhila=18, yhila=13;
 static void piirrä() {
-    // TODO: milloin kannattaa piirtää
     for(int i=0; i<kuvan_koko; i+=4)
-	*(int*)(kuva+i) = 0x11888888;
-    int ind[] = {0,1,2,3,4,5,1,2,3,4,1,-1};
-    no_niin_ja_laitapas_nyt_sitten_teksti_vaikka_tuohon(ind, 100, 100);
-    no_niin_ja_laitapas_nyt_sitten_teksti_vaikka_tuohon(ind, 500, 100);
+	*(int*)(kuva+i) = 0xaf882838;
+
+    int asc = face->size->metrics.ascender/64;
+    int xdiff = xres/xhila,
+	ydiff = (yres-asc)/(yhila-1);
+    char sana[10];
+    sana[9] = 0;
+    FILE* f = fopen("sanat.txt", "r");
+    for(int j=0; j<yhila; j++)
+	for(int i=0; i<xhila; i++) {
+	    if(fscanf(f, "%9s", sana) != 1)
+		goto poistu;
+	    no_niin_ja_laitapas_nyt_sitten_teksti_vaikka_tuohon(sana, j*ydiff+asc, i*xdiff);
+	}
+poistu:
+    fclose(f);
 }
