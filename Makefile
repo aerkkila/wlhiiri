@@ -1,7 +1,6 @@
 src = xdg-shell.c
-otsake = ${src:.c=.h}
 xdg = /usr/share/wayland-protocols/stable/xdg-shell/xdg-shell.xml
-libs = -lwayland-client -lwlroots -lutf8proc
+libs = -lwayland-client -lwlroots -lutf8proc -lxkbcommon
 
 all: main.out
 
@@ -17,5 +16,5 @@ wlr-output-management-unstable-v1.c:
 wlr-output-management-unstable-v1.h:
 	wayland-scanner client-header ${@:.h=.xml} $@
 
-main.out: main.c piirtäjä.h xdg-shell.c xdg-shell.h
+main.out: main.c piirtäjä.h xdg-shell.c xdg-shell.h syöte.h
 	gcc -Wall -g -o $@ main.c ${src} ${libs} `pkg-config --cflags --libs freetype2`

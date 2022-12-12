@@ -15,6 +15,7 @@ struct wl_registry*   wlreg;
 struct wl_compositor* kokoaja;
 struct xdg_wm_base*   xdg_base;
 struct wl_shm*        wlshm;
+struct wl_seat*       istuin;
 /* luotavat */
 struct wl_surface*    surface;
 struct xdg_surface*   xdgsurf;
@@ -27,7 +28,10 @@ int kuvan_koko; // const paitsi funktiossa kiinnitä_kuva
 const int hmin = 36, wmin = 36;
 unsigned char* kuva;
 
+void nop() {}
+
 #include "piirtäjä.h"
+#include "syöte.h"
 
 void vaadi(void* a, ...) {
     va_list vl;
@@ -85,18 +89,21 @@ static struct xdg_toplevel_listener xdgtoplistener = {
     .close = xdgclose,
 };
 
+#define sitomiset if(0)
 #define jos(str) else if(!strcmp(interface, str))
 #define sido(a,b,c) } jos(a##_interface.name) { b = wl_registry_bind(reg, id, &a##_interface, c)
 static void registry_handler(void* data, struct wl_registry* reg, uint32_t id,
-	const char* interface, uint32_t version) {
+			     const char* interface, uint32_t version) {
     //printf("registry_handler %s, %u\n", interface, id);
-    if(0) { // Tämä on supermegajättiovela makro. Nämä käydään, vaikka näyttävät olevan if(0):n sisällä.
+    sitomiset { 
 	sido(wl_compositor, kokoaja, 4);
 	sido(xdg_wm_base, xdg_base, 1);
 	xdg_wm_base_add_listener(xdg_base, &xdg_base_lis, NULL);
 	sido(wl_shm, wlshm, 1);
+	sido(wl_seat, istuin, 8);
     }
 }
+#undef sitomiset
 #undef sido
 #undef jos
 static void registry_poistaja(void* data, struct wl_registry* reg, uint32_t id) {
@@ -124,7 +131,7 @@ int main() {
     wl_registry_add_listener(wlreg, &reg_listener, NULL);
     wl_display_dispatch(wl);
     wl_display_roundtrip(wl);
-    vaadi(wl, "wl", kokoaja, "kokoaja", wlshm, "wl_shm", xdg_base, "xdg_wm_base", NULL);
+    vaadi(wl, "wl", kokoaja, "kokoaja", wlshm, "wl_shm", xdg_base, "xdg_wm_base", istuin, "wl_seat", NULL);
 
     assert(( surface = wl_compositor_create_surface(kokoaja)          ));
     framekutsuja = wl_surface_frame(surface);
@@ -137,6 +144,7 @@ int main() {
     xdg_toplevel_set_fullscreen(xdgtop, NULL);
 
     alusta_teksti();
+    alusta_näppäimistö();
 
     int kokonaan = 1;
     while (wl_display_dispatch(wl) > 0 && jatkakoon) { // tämä kutsunee kuuntelijat ja tekee poll-asian
@@ -161,6 +169,11 @@ int main() {
     wl_surface_destroy(surface); surface=NULL;
     wl_callback_destroy(framekutsuja); framekutsuja=NULL;
 
+    wl_keyboard_release(näppäimistö); näppäimistö=NULL; // onko turha
+    xkb_context_unref(xkbasiayhteys); xkbasiayhteys=NULL;
+    xkb_state_unref(xkbtila); xkbtila=NULL;
+
+    wl_seat_destroy(istuin); istuin=NULL;
     wl_shm_destroy(wlshm); wlshm=NULL;
     xdg_wm_base_destroy(xdg_base); xdg_base=NULL;
     wl_compositor_destroy(kokoaja); kokoaja=NULL;
