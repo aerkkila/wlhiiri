@@ -24,9 +24,30 @@ static void kb_keymap_kutsu(void* data, struct wl_keyboard* wlkb, uint32_t muoto
 static void kb_key_kutsu(void* data, struct wl_keyboard* wlkb, uint32_t serial,
 			 uint32_t aika, uint32_t näpp, uint32_t tila) {
     näpp += 8;
+    static char syöte[64];
+    static int isyöte;
     char puskuri[32];
-    xkb_state_key_get_utf8(xkbtila, näpp, puskuri, sizeof(puskuri));
-    //printf("'%s', tila = %u\n", puskuri, tila);
+    const xkb_keysym_t* syms_out;
+    int ival;
+    ival = xkb_state_key_get_syms(xkbtila, näpp, &syms_out);
+    if(!tila)
+	return;
+    if(!xkb_state_key_get_utf8(xkbtila, näpp, puskuri, sizeof(puskuri))) // ei lue esim. nuolinäppäimiä
+	;
+    for(int i=0; i<ival; i++) {
+	switch(syms_out[i]) {
+	    case XKB_KEY_BackSpace:
+		while(isyöte && (syöte[--isyöte] & (3<<6)) == 3<<6);
+		syöte[isyöte] = '\0';
+		goto laita;
+	}
+    }
+    if(0 <= puskuri[0] && puskuri[0] < ' ')
+	return;
+    strcpy(syöte+isyöte, puskuri);
+    isyöte += strlen(puskuri);
+laita:
+    printf("„%s“, tila = %u, syöte = „%s“\n", puskuri, tila, syöte);
 }
 static void kb_repeat_kutsu(void* data, struct wl_keyboard* wlkb, int32_t nopeus, int32_t viive) {
     toistonopeus = nopeus;
