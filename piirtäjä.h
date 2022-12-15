@@ -80,7 +80,6 @@ static void vapauta_teksti() {
     library = (FT_Library){0};
 }
 
-int xhila=18, yhila=13;
 static void piirrä() {
     for(int i=0; i<kuvan_koko; i+=4)
 	*(int*)(kuva+i) = 0xaf882838;
@@ -88,15 +87,8 @@ static void piirrä() {
     int asc = face->size->metrics.ascender/64;
     int xdiff = xres/xhila,
 	ydiff = (yres-asc)/(yhila-1);
-    char sana[10];
-    sana[9] = 0;
-    FILE* f = fopen("sanat.txt", "r");
     for(int j=0; j<yhila; j++)
 	for(int i=0; i<xhila; i++) {
-	    if(fscanf(f, "%9s", sana) != 1)
-		goto poistu;
-	    no_niin_ja_laitapas_nyt_sitten_teksti_vaikka_tuohon(sana, j*ydiff+asc, i*xdiff);
+	    no_niin_ja_laitapas_nyt_sitten_teksti_vaikka_tuohon(sanat[j*xhila+i], j*ydiff+asc, i*xdiff);
 	}
-poistu:
-    fclose(f);
 }

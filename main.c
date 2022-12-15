@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <err.h>
 #include <sys/time.h>
+#include <sys/stat.h>
 
 /* saatavat */
 struct wl_display*    wl;
@@ -24,6 +25,8 @@ struct wl_buffer*     puskuri;
 struct wl_callback*   framekutsuja;
 
 int jatkakoon = 1, saa_piirtää, xres=300, yres=300, muuttui;
+int xhila=18, yhila=13, xyhila, *osumat;
+const char** sanat;
 int kuvan_koko; // const paitsi funktiossa kiinnitä_kuva
 const int hmin = 36, wmin = 36;
 unsigned char* kuva;
@@ -126,6 +129,22 @@ static void framekutsu(void* data, struct wl_callback* kutsu, uint32_t aika) {
 }
 
 int main() {
+    xyhila = xhila*yhila;
+    osumat = malloc(xyhila*sizeof(int));
+    osumat[0] = -1;
+    sanat = malloc(xyhila*sizeof(void*));
+    struct stat stat;
+    int fd = open("sanat.txt", O_RDONLY);
+    fstat(fd, &stat);
+    size_t sanatkoko = stat.st_size;
+    char* tied = mmap(NULL, sanatkoko, PROT_READ, MAP_PRIVATE, fd, 0);
+    const char* ptr = tied;
+    for(int i=0;; i++) {
+	sanat[i] = ptr;
+	if(i==xyhila-1) break;
+	while(*ptr++);
+    }
+
     assert((wl = wl_display_connect(NULL)));
     assert((wlreg = wl_display_get_registry(wl)));
     wl_registry_add_listener(wlreg, &reg_listener, NULL);
@@ -160,6 +179,10 @@ int main() {
 	}
     }
 
+    munmap(tied, sanatkoko);
+    close(fd);
+    free(osumat);
+    free(sanat);
     vapauta_teksti();
     if(kuva) { munmap(kuva, kuvan_koko); kuva = NULL; }
 

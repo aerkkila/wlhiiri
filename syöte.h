@@ -47,7 +47,7 @@ static void kb_key_kutsu(void* data, struct wl_keyboard* wlkb, uint32_t serial,
     strcpy(syöte+isyöte, puskuri);
     isyöte += strlen(puskuri);
 laita:
-    printf("„%s“, tila = %u, syöte = „%s“\n", puskuri, tila, syöte);
+    //printf("„%s“, tila = %u, syöte = „%s“\n", puskuri, tila, syöte);
 }
 static void kb_repeat_kutsu(void* data, struct wl_keyboard* wlkb, int32_t nopeus, int32_t viive) {
     toistonopeus = nopeus;
