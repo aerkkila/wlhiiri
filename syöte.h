@@ -6,6 +6,14 @@ static struct xkb_state* xkbtila;
 static struct xkb_keymap* keymap;
 static int toistonopeus, toistoviive;
 
+void käsittele_syötetty(char* syöte) {
+    for(int i=0; i<xyhila; i++)
+	if(!strcmp(sanat[i], syöte)) {
+	    hiiri(ykoord(i), xkoord(i));
+	    printf("y=%i, x=%i\n", ykoord(i), xkoord(i));
+	    return; }
+}
+
 static void kb_modifiers_kutsu(void* data, struct wl_keyboard* wlkb, uint32_t serial, uint32_t mods_depr,
 			       uint32_t mods_latch, uint32_t mods_lock, uint32_t group) {
     xkb_state_update_mask(xkbtila, mods_depr, mods_latch, mods_lock, 0, 0, group);
@@ -40,6 +48,11 @@ static void kb_key_kutsu(void* data, struct wl_keyboard* wlkb, uint32_t serial,
 		while(isyöte && (syöte[--isyöte] & (3<<6)) == 3<<6);
 		syöte[isyöte] = '\0';
 		goto laita;
+	    case XKB_KEY_Return:
+		käsittele_syötetty(syöte);
+		syöte[isyöte=0] = '\0';
+		jatkakoon = 0;
+		return;
 	}
     }
     if(0 <= puskuri[0] && puskuri[0] < ' ')

@@ -9,6 +9,7 @@
 #include <err.h>
 #include <sys/time.h>
 #include <sys/stat.h>
+#include <linux/uinput.h>
 
 /* saatavat */
 struct wl_display*    wl;
@@ -24,13 +25,15 @@ struct xdg_toplevel*  xdgtop;
 struct wl_buffer*     puskuri;
 struct wl_callback*   framekutsuja;
 
-int jatkakoon = 1, saa_piirtää, xres=300, yres=300, muuttui;
+int jatkakoon = 1, saa_piirtää, xres=300, yres=300, muuttui, hiiri_fd;
 int xhila=18, yhila=13, xyhila, *osumat;
 const char** sanat;
 int kuvan_koko; // const paitsi funktiossa kiinnitä_kuva
 const int hmin = 36, wmin = 36;
 unsigned char* kuva;
 
+void hiiri(int y, int x);
+void alusta_hiiri(int fd);
 void nop() {}
 
 #include "piirtäjä.h"
@@ -129,6 +132,12 @@ static void framekutsu(void* data, struct wl_callback* kutsu, uint32_t aika) {
 }
 
 int main() {
+    if((hiiri_fd = open("/dev/uinput", O_WRONLY | O_NONBLOCK)) < 0)
+	err(1, "open(/dev/uinput)");
+    /* Luovutaan pääkäyttäjän oikeuksista. */
+    seteuid(getuid());
+    setegid(getgid());
+
     xyhila = xhila*yhila;
     osumat = malloc(xyhila*sizeof(int));
     osumat[0] = -1;
@@ -165,7 +174,7 @@ int main() {
     alusta_teksti();
     alusta_näppäimistö();
 
-    int kokonaan = 1;
+    int kokonaan = 2;
     while (wl_display_dispatch(wl) > 0 && jatkakoon) { // tämä kutsunee kuuntelijat ja tekee poll-asian
 	usleep(1000000/50);
 	if(!saa_piirtää) continue;
@@ -175,6 +184,8 @@ int main() {
 	    wl_surface_damage_buffer(surface, 0, 0, xres, yres);
 	    wl_surface_attach(surface, puskuri, 0, 0); // tämä aina vapautuu automaattisesti
 	    wl_surface_commit(surface);
+	    if(kokonaan == 2) // vain ensimmäisellä kierroksella
+		alusta_hiiri(hiiri_fd);
 	    kokonaan = 0;
 	}
     }
@@ -202,4 +213,39 @@ int main() {
     wl_compositor_destroy(kokoaja); kokoaja=NULL;
     wl_registry_destroy(wlreg);
     wl_display_disconnect(wl);
+    close(hiiri_fd);
+}
+
+#define Ioctl(...)				\
+    do {					\
+	if(ioctl(__VA_ARGS__) < 0)		\
+	    err(1, "ioctl rivi %i", __LINE__);	\
+    } while(0)
+
+void alusta_hiiri(int fd) {
+    struct uinput_setup usetup = { .id.bustype = BUS_USB };
+    strcpy(usetup.name, "wlhiiren_hiiri");
+    Ioctl(fd, UI_SET_EVBIT,  EV_KEY);
+    Ioctl(fd, UI_SET_KEYBIT, BTN_LEFT);
+    Ioctl(fd, UI_SET_EVBIT,  EV_ABS);
+    Ioctl(fd, UI_SET_ABSBIT, ABS_X);
+    Ioctl(fd, UI_SET_ABSBIT, ABS_Y);
+    Ioctl(fd, UI_DEV_SETUP, &usetup);
+    Ioctl(fd, UI_DEV_CREATE);
+}
+
+void hiiri_laita(int fd, int tyyppi, int koodi, int arvo) {
+    struct input_event ie = {
+	.type  = tyyppi,
+	.code  = koodi,
+	.value = arvo,
+    };
+    if(write(fd, &ie, sizeof(ie)) < sizeof(ie))
+	err(1, "write rivillä %i", __LINE__);
+}
+
+void hiiri(int y, int x) {
+    hiiri_laita(hiiri_fd, EV_ABS, ABS_X, (double)x/xres);
+    hiiri_laita(hiiri_fd, EV_ABS, ABS_Y, (double)y/yres);
+    hiiri_laita(hiiri_fd, EV_SYN, SYN_REPORT, 0);
 }

@@ -18,3 +18,10 @@ wlr-output-management-unstable-v1.h:
 
 main.out: main.c piirtäjä.h xdg-shell.c xdg-shell.h syöte.h
 	gcc -Wall -g -o $@ main.c ${src} ${libs} `pkg-config --cflags --libs freetype2`
+
+install: main.out
+	cp main.out /usr/local/bin/hii
+	chmod +s /usr/local/bin/hii
+
+uninstall:
+	rm /usr/local/bin/hii

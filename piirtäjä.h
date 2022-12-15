@@ -80,12 +80,22 @@ static void vapauta_teksti() {
     library = (FT_Library){0};
 }
 
+static int xkoord(int n) {
+    return n%xhila * xres/xhila;
+}
+
+static int ykoord(int n) {
+    int asc = face->size->metrics.ascender/64,
+	ydiff = (yres-asc)/(yhila-1);
+    return n/xhila * ydiff;
+}
+
 static void piirrä() {
     for(int i=0; i<kuvan_koko; i+=4)
-	*(int*)(kuva+i) = 0xaf882838;
+	*(int*)(kuva+i) = 0x00000000;
 
-    int asc = face->size->metrics.ascender/64;
-    int xdiff = xres/xhila,
+    int asc = face->size->metrics.ascender/64,
+	xdiff = xres/xhila,
 	ydiff = (yres-asc)/(yhila-1);
     for(int j=0; j<yhila; j++)
 	for(int i=0; i<xhila; i++) {
