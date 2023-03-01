@@ -10,6 +10,7 @@
 #include <sys/time.h>
 #include <sys/stat.h>
 #include <linux/uinput.h>
+#include <pthread.h>
 
 /* saatavat */
 struct wl_display*    wl;
@@ -25,14 +26,17 @@ struct xdg_toplevel*  xdgtop;
 struct wl_buffer*     puskuri;
 struct wl_callback*   framekutsuja;
 
-int jatkakoon = 1, saa_piirtää, xres=300, yres=300, muuttui, hiiri_fd;
+int saa_piirtää, xres=300, yres=300, muuttui, hiiri_fd, verbose;
+volatile int jatkakoon = 1;
 int xhila=18, yhila=13, xyhila, *osumat;
 const char** sanat;
 int kuvan_koko; // const paitsi funktiossa kiinnitä_kuva
 const int hmin = 36, wmin = 36;
 unsigned char* kuva;
 
-void hiiri(int y, int x);
+const char* sanatiedosto = "/usr/local/share/wlhiiri/sanat";
+
+void* hiiri(void*);
 void alusta_hiiri(int fd);
 void nop() {}
 
@@ -131,19 +135,21 @@ static void framekutsu(void* data, struct wl_callback* kutsu, uint32_t aika) {
     saa_piirtää = 1;
 }
 
-int main() {
+int main(int argc, char** argv) {
     if((hiiri_fd = open("/dev/uinput", O_WRONLY | O_NONBLOCK)) < 0)
 	err(1, "open(/dev/uinput)");
     /* Luovutaan pääkäyttäjän oikeuksista. */
     seteuid(getuid());
     setegid(getgid());
 
+    verbose = (argc > 1);
     xyhila = xhila*yhila;
     osumat = malloc(xyhila*sizeof(int));
     osumat[0] = -1;
     sanat = malloc(xyhila*sizeof(void*));
     struct stat stat;
-    int fd = open("sanat.txt", O_RDONLY);
+    int fd = open(sanatiedosto, O_RDONLY);
+    if (fd < 0) err(1, "open \"%s\"", sanatiedosto);
     fstat(fd, &stat);
     size_t sanatkoko = stat.st_size;
     char* tied = mmap(NULL, sanatkoko, PROT_READ, MAP_PRIVATE, fd, 0);
@@ -173,9 +179,16 @@ int main() {
 
     alusta_teksti();
     alusta_näppäimistö();
+    alusta_kursori();
 
     int kokonaan = 2;
-    while (wl_display_dispatch(wl) > 0 && jatkakoon) { // tämä kutsunee kuuntelijat ja tekee poll-asian
+    pthread_t säie;
+    while (jatkakoon && wl_display_dispatch(wl) > 0) { // tämä kutsunee kuuntelijat ja tekee poll-asian
+	if (hiireksi_x >= 0) {
+	    short yx[] = {hiireksi_y, hiireksi_x};
+	    pthread_create(&säie, NULL, hiiri, &yx);
+	    hiireksi_x = -1;
+	}
 	usleep(1000000/50);
 	if(!saa_piirtää) continue;
 	saa_piirtää = 0;
@@ -189,6 +202,7 @@ int main() {
 	    kokonaan = 0;
 	}
     }
+    pthread_join(säie, NULL);
 
     munmap(tied, sanatkoko);
     close(fd);
@@ -206,6 +220,8 @@ int main() {
     wl_keyboard_release(näppäimistö); näppäimistö=NULL; // onko turha
     xkb_context_unref(xkbasiayhteys); xkbasiayhteys=NULL;
     xkb_state_unref(xkbtila); xkbtila=NULL;
+
+    kursori = (wl_pointer_release(kursori), NULL);
 
     wl_seat_destroy(istuin); istuin=NULL;
     wl_shm_destroy(wlshm); wlshm=NULL;
@@ -227,9 +243,9 @@ void alusta_hiiri(int fd) {
     strcpy(usetup.name, "wlhiiren_hiiri");
     Ioctl(fd, UI_SET_EVBIT,  EV_KEY);
     Ioctl(fd, UI_SET_KEYBIT, BTN_LEFT);
-    Ioctl(fd, UI_SET_EVBIT,  EV_ABS);
-    Ioctl(fd, UI_SET_ABSBIT, ABS_X);
-    Ioctl(fd, UI_SET_ABSBIT, ABS_Y);
+    Ioctl(fd, UI_SET_EVBIT,  EV_REL);
+    Ioctl(fd, UI_SET_RELBIT, REL_X);
+    Ioctl(fd, UI_SET_RELBIT, REL_Y);
     Ioctl(fd, UI_DEV_SETUP, &usetup);
     Ioctl(fd, UI_DEV_CREATE);
 }
@@ -244,8 +260,44 @@ void hiiri_laita(int fd, int tyyppi, int koodi, int arvo) {
 	err(1, "write rivillä %i", __LINE__);
 }
 
-void hiiri(int y, int x) {
-    hiiri_laita(hiiri_fd, EV_ABS, ABS_X, (double)x/xres);
-    hiiri_laita(hiiri_fd, EV_ABS, ABS_Y, (double)y/yres);
+const short hitaus = 4;
+const short sieto = 1;
+int REL_YX[] = {REL_Y, REL_X};
+#define abs(i) ((i) < 0 ? -(i) : (i))
+#define Printf(...) do{if(verbose)printf(__VA_ARGS__);}while(0)
+
+void* hiiri(void* args) {
+    short* yx = args;
+    hiiri_laita(hiiri_fd, EV_REL, REL_X, 25); // TODO: saisiko sijainnin suoraan
     hiiri_laita(hiiri_fd, EV_SYN, SYN_REPORT, 0);
+    while (hiiren_yx[0] < 0 || hiiren_yx[1] < 0)
+	usleep(1000000/2);
+    short yx_hitaus[] = {hitaus, hitaus};
+    int lasku = 0;
+    char valmis = 0;
+    while (valmis != 3) {
+	if(++lasku > 100) break;
+	for(int i=0; i<2; i++) {
+	    short siirto = yx[i]-hiiren_yx[i];
+	    if (abs(siirto) <= sieto) {
+		Printf("\033[4;35m%i: %i\033[0m\n", i, yx[i]);
+		valmis |= 1<<i;
+		continue; }
+	    Printf("%i: %hi --> %hi (\033[s     / %hi) ", i, hiiren_yx[i], yx[i], siirto);
+	    if (siirto < yx_hitaus[i]) {
+		int yrite = yx_hitaus[i] / 2;
+		yx_hitaus[i] = yrite ? yrite : 1;
+	    }
+	    siirto /= yx_hitaus[i];
+	    Printf("\033[u%hi \n", siirto);
+	    hiiren_yx[i] = -1;
+	    hiiri_laita(hiiri_fd, EV_REL, REL_YX[i], siirto);
+	}
+	hiiri_laita(hiiri_fd, EV_SYN, SYN_REPORT, 0);
+
+	volatile int* p = (volatile int*)hiiren_yx; // tällä tarkistetaan alla, onko kumpikaan negatiivinen
+	while((usleep(1000000/1000), *p | *p<<16) < 0);
+    }
+    jatkakoon = 0;
+    return NULL;
 }

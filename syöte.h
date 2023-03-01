@@ -6,11 +6,13 @@ static struct xkb_state* xkbtila;
 static struct xkb_keymap* keymap;
 static int toistonopeus, toistoviive;
 
+static short hiireksi_x=-1, hiireksi_y=-1;
+
 void käsittele_syötetty(char* syöte) {
     for(int i=0; i<xyhila; i++)
 	if(!strcmp(sanat[i], syöte)) {
-	    hiiri(ykoord(i), xkoord(i));
-	    printf("y=%i, x=%i\n", ykoord(i), xkoord(i));
+	    hiireksi_x = xkoord(i);
+	    hiireksi_y = ykoord(i);
 	    return; }
 }
 
@@ -51,7 +53,7 @@ static void kb_key_kutsu(void* data, struct wl_keyboard* wlkb, uint32_t serial,
 	    case XKB_KEY_Return:
 		käsittele_syötetty(syöte);
 		syöte[isyöte=0] = '\0';
-		jatkakoon = 0;
+		//jatkakoon = 0;
 		return;
 	}
     }
@@ -79,4 +81,28 @@ static void alusta_näppäimistö() {
     xkbasiayhteys = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
     näppäimistö = wl_seat_get_keyboard(istuin);
     wl_keyboard_add_listener(näppäimistö, &näppäimistökuuntelija, NULL);
+}
+
+/* *************************************************** */
+/* ---------------------- hiiri ---------------------- */
+/* ................................................... */
+
+static short volatile hiiren_yx[2];
+
+static void kursori_liikkui(void* data, struct wl_pointer* kursori, uint32_t aika,
+	wl_fixed_t pintax, wl_fixed_t pintay) {
+    hiiren_yx[1] = wl_fixed_to_double(pintax);
+    hiiren_yx[0] = wl_fixed_to_double(pintay);
+}
+
+static struct wl_pointer* kursori;
+static struct wl_pointer_listener kursorikuuntelija = {
+    .motion = kursori_liikkui,
+    .enter = nop, .leave = nop, .button = nop, .axis = nop, .frame = nop,
+    .axis_source = nop, .axis_stop = nop, .axis_discrete = nop, .axis_value120 = nop,
+};
+
+static void alusta_kursori() {
+    kursori = wl_seat_get_pointer(istuin);
+    wl_pointer_add_listener(kursori, &kursorikuuntelija, NULL);
 }

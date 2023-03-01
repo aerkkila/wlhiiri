@@ -1,6 +1,7 @@
 src = xdg-shell.c
 xdg = /usr/share/wayland-protocols/stable/xdg-shell/xdg-shell.xml
 libs = -lwayland-client -lwlroots -lutf8proc -lxkbcommon
+prefix = /usr/local
 
 all: main.out
 
@@ -17,11 +18,13 @@ wlr-output-management-unstable-v1.h:
 	wayland-scanner client-header ${@:.h=.xml} $@
 
 main.out: main.c piirtäjä.h xdg-shell.c xdg-shell.h syöte.h
-	gcc -Wall -g -o $@ main.c ${src} ${libs} `pkg-config --cflags --libs freetype2`
+	gcc -Wall -g -o $@ $< ${src} ${libs} `pkg-config --cflags --libs freetype2`
 
 install: main.out
-	cp main.out /usr/local/bin/hii
-	chmod +s /usr/local/bin/hii
+	cp $< $(prefix)/bin/wlhiiri
+	chmod +s $(prefix)/bin/wlhiiri
+	mkdir $(prefix)/share/wlhiiri
+	cp sanat $(prefix)/share/wlhiiri/
 
 uninstall:
-	rm /usr/local/bin/hii
+	rm -rf $(prefix)/bin/wlhiiri $(prefix)/share/wlhiiri
