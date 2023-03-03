@@ -28,12 +28,12 @@ struct wl_callback*   framekutsuja;
 
 int saa_piirtää, xres=300, yres=300, muuttui, hiiri_fd, verbose;
 volatile int jatkakoon = 1;
-int xhila=22, yhila=20, xyhila;
+int xhila=22, yhila=20, xyhila, fonttikoko = 24;
 const char** sanat;
 int kuvan_koko; // const paitsi funktiossa kiinnitä_kuva
 const int hmin = 36, wmin = 36;
 unsigned char* kuva;
-int piirrä_uudesti = 1;
+int piirrä_uudesti = 1, klikattakoon;
 
 const char* sanatiedosto = "/usr/local/share/wlhiiri/sanat";
 
@@ -202,9 +202,7 @@ int main(int argc, char** argv) {
 	if(!saa_piirtää)
 	    continue;
 	saa_piirtää = 0;
-	puts("saa piirtää");
 	if(piirrä_uudesti) {
-	    puts("piirretään");
 	    piirrä();
 	    wl_surface_damage_buffer(surface, 0, 0, xres, yres);
 	    wl_surface_attach(surface, puskuri, 0, 0); // tämä aina vapautuu automaattisesti
@@ -239,11 +237,13 @@ int main(int argc, char** argv) {
     wl_registry_destroy(wlreg);
     wl_display_disconnect(wl);
 
-    usleep(100000); // Ennen klikkausta odotetaan 0,1 s, että peittävä ikkuna ehtii tuhoutua.
-    hiiri_laita(hiiri_fd, EV_KEY, BTN_LEFT, 1);
-    hiiri_laita(hiiri_fd, EV_SYN, SYN_REPORT, 0);
-    hiiri_laita(hiiri_fd, EV_KEY, BTN_LEFT, 0);
-    hiiri_laita(hiiri_fd, EV_SYN, SYN_REPORT, 0);
+    if (klikattakoon) {
+	usleep(100000); // Ennen klikkausta odotetaan 0,1 s, että peittävä ikkuna ehtii tuhoutua.
+	hiiri_laita(hiiri_fd, EV_KEY, BTN_LEFT, 1);
+	hiiri_laita(hiiri_fd, EV_SYN, SYN_REPORT, 0);
+	hiiri_laita(hiiri_fd, EV_KEY, BTN_LEFT, 0);
+	hiiri_laita(hiiri_fd, EV_SYN, SYN_REPORT, 0);
+    }
 
     close(hiiri_fd);
 }

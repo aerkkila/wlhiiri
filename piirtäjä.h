@@ -39,7 +39,7 @@ static struct wl_buffer* kiinnitä_kuva() {
 static void alusta_teksti() {
     assert(!FT_Init_FreeType(&library));
     assert(!FT_New_Face(library, "/usr/share/fonts/liberation/LiberationMono-Regular.ttf", 0, &face));
-    assert(!FT_Set_Pixel_Sizes(face, 0, 25)); // TODO
+    assert(!FT_Set_Pixel_Sizes(face, 0, fonttikoko)); // TODO
 }
 
 static void no_niin_ja_laitapas_nyt_sitten_teksti_vaikka_tuohon(const char* teksti, int y, int x) {
@@ -84,10 +84,17 @@ static int xkoord(int n) {
     return n%xhila * xres/xhila;
 }
 
+/* Tämä päättää, miten tekstit sijoitetaan sarakkeissa. */
+static int ykoordfun(int j, int i, int ydiff, int asc) {
+    return j*ydiff+asc + (i%2)*0.5*ydiff - (i%2)*(j==yhila-1)*0.4*ydiff;
+}
+
 static int ykoord(int n) {
     int asc = face->size->metrics.ascender/64,
 	ydiff = (yres-asc)/(yhila-1);
-    return n/xhila * ydiff;
+    int j = n/xhila;
+    int i = n%xhila;
+    return ykoordfun(j, i, ydiff, asc);
 }
 
 static void piirrä() {
@@ -99,6 +106,7 @@ static void piirrä() {
 	ydiff = (yres-asc)/(yhila-1);
     for(int j=0; j<yhila; j++)
 	for(int i=0; i<xhila; i++) {
-	    no_niin_ja_laitapas_nyt_sitten_teksti_vaikka_tuohon(sanat[j*xhila+i], j*ydiff+asc, i*xdiff);
+	    int jkoord= ykoordfun(j, i, ydiff, asc);
+	    no_niin_ja_laitapas_nyt_sitten_teksti_vaikka_tuohon(sanat[j*xhila+i], jkoord, i*xdiff);
 	}
 }

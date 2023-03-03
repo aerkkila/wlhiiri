@@ -13,6 +13,7 @@ void käsittele_syötetty(char* syöte) {
 	if(!strcmp(sanat[i], syöte)) {
 	    hiireksi_x = xkoord(i);
 	    hiireksi_y = ykoord(i);
+	    klikattakoon = 1;
 	    return; }
 }
 
@@ -55,6 +56,9 @@ static void kb_key_kutsu(void* data, struct wl_keyboard* wlkb, uint32_t serial,
 		syöte[isyöte=0] = '\0';
 		//jatkakoon = 0;
 		return;
+	    case XKB_KEY_Escape:
+		jatkakoon = 0;
+		break;
 	}
     }
     if(0 <= puskuri[0] && puskuri[0] < ' ')
