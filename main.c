@@ -135,6 +135,16 @@ static void framekutsu(void* data, struct wl_callback* kutsu, uint32_t aika) {
     saa_piirtää = 1;
 }
 
+void hiiri_laita(int fd, int tyyppi, int koodi, int arvo) {
+    struct input_event ie = {
+	.type  = tyyppi,
+	.code  = koodi,
+	.value = arvo,
+    };
+    if(write(fd, &ie, sizeof(ie)) < sizeof(ie))
+	err(1, "write rivillä %i", __LINE__);
+}
+
 int main(int argc, char** argv) {
     if((hiiri_fd = open("/dev/uinput", O_WRONLY | O_NONBLOCK)) < 0)
 	err(1, "open(/dev/uinput)");
@@ -231,6 +241,13 @@ int main(int argc, char** argv) {
     wl_compositor_destroy(kokoaja); kokoaja=NULL;
     wl_registry_destroy(wlreg);
     wl_display_disconnect(wl);
+
+    usleep(100000); // Ennen klikkausta odotetaan 0,1 s, että peittävä ikkuna ehtii tuhoutua.
+    hiiri_laita(hiiri_fd, EV_KEY, BTN_LEFT, 1);
+    hiiri_laita(hiiri_fd, EV_SYN, SYN_REPORT, 0);
+    hiiri_laita(hiiri_fd, EV_KEY, BTN_LEFT, 0);
+    hiiri_laita(hiiri_fd, EV_SYN, SYN_REPORT, 0);
+
     close(hiiri_fd);
 }
 
@@ -250,16 +267,6 @@ void alusta_hiiri(int fd) {
     Ioctl(fd, UI_SET_RELBIT, REL_Y);
     Ioctl(fd, UI_DEV_SETUP, &usetup);
     Ioctl(fd, UI_DEV_CREATE);
-}
-
-void hiiri_laita(int fd, int tyyppi, int koodi, int arvo) {
-    struct input_event ie = {
-	.type  = tyyppi,
-	.code  = koodi,
-	.value = arvo,
-    };
-    if(write(fd, &ie, sizeof(ie)) < sizeof(ie))
-	err(1, "write rivillä %i", __LINE__);
 }
 
 const short hitaus = 4;
