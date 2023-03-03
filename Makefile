@@ -11,12 +11,6 @@ xdg-shell.h: $(xdg)
 xdg-shell.c: $(xdg)
 	wayland-scanner private-code $< $@
 
-wlr-output-management-unstable-v1.c:
-	wayland-scanner private-code ${@:.c=.xml} $@
-
-wlr-output-management-unstable-v1.h:
-	wayland-scanner client-header ${@:.h=.xml} $@
-
 main.out: main.c piirtäjä.h xdg-shell.c xdg-shell.h syöte.h
 	gcc -Wall -g -o $@ $< ${src} ${libs} `pkg-config --cflags --libs freetype2`
 
