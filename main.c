@@ -28,11 +28,12 @@ struct wl_callback*   framekutsuja;
 
 int saa_piirtää, xres=300, yres=300, muuttui, hiiri_fd, verbose;
 volatile int jatkakoon = 1;
-int xhila=22, yhila=20, xyhila, *osumat;
+int xhila=22, yhila=20, xyhila;
 const char** sanat;
 int kuvan_koko; // const paitsi funktiossa kiinnitä_kuva
 const int hmin = 36, wmin = 36;
 unsigned char* kuva;
+int piirrä_uudesti = 1;
 
 const char* sanatiedosto = "/usr/local/share/wlhiiri/sanat";
 
@@ -154,8 +155,6 @@ int main(int argc, char** argv) {
 
     verbose = (argc > 1);
     xyhila = xhila*yhila;
-    osumat = malloc(xyhila*sizeof(int));
-    osumat[0] = -1;
     sanat = malloc(xyhila*sizeof(void*));
     struct stat stat;
     int fd = open(sanatiedosto, O_RDONLY);
@@ -191,7 +190,6 @@ int main(int argc, char** argv) {
     alusta_näppäimistö();
     alusta_kursori();
 
-    int piirrä_uudesti = 1;
     pthread_t säie;
     alusta_hiiri(hiiri_fd);
     while (jatkakoon && wl_display_dispatch(wl) > 0) { // tämä kutsunee kuuntelijat ja tekee poll-asian
@@ -218,7 +216,6 @@ int main(int argc, char** argv) {
 
     munmap(tied, sanatkoko);
     close(fd);
-    free(osumat);
     free(sanat);
     vapauta_teksti();
     if(kuva) { munmap(kuva, kuvan_koko); kuva = NULL; }
