@@ -6,7 +6,7 @@ To be able to see the screen behind the texts, the color of fullscreen backgroun
 For example on dwl: \
 static const float fullscreen\_bg[]         = {0.0, 0.0, 0.0, 0.0};
 
-*Installation:*
+### Installation: \
   make \
   make install # as root
 
@@ -19,9 +19,8 @@ Makefile runs that program using LICENSE as file\_in.
 The program is installed with SUID permission because opening /dev/uinput with write access to create a mouse needs root privilidges.
 However, I don consider that as a security issue, since the program gives up root privilidges right after opening that file before doing anything else (see the main function).
 
-Usage: \
+### Usage: \
 type the text \
-+ \
-Return to click on the spot of the text. \
-Arrow Up / Arrow Down to click on the spot of the text and then move cursor to right border of the screen. \
-Esc to exit.
+- **Return** to click on the spot of the text. \
+- **Arrow Up / Arrow Down** to click on the spot of the text and then move cursor to right border of the screen. \
+- **Esc** to exit.
