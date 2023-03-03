@@ -7,7 +7,6 @@
 #include <string.h>
 #include <assert.h>
 #include <err.h>
-#include <sys/time.h>
 #include <sys/stat.h>
 #include <linux/uinput.h>
 #include <pthread.h>
@@ -33,7 +32,7 @@ const char** sanat;
 int kuvan_koko; // const paitsi funktiossa kiinnitä_kuva
 const int hmin = 36, wmin = 36;
 unsigned char* kuva;
-int piirrä_uudesti = 1, klikattakoon;
+char piirrä_uudesti = 1, klikattakoon, hiiri_sivuun;
 
 const char* sanatiedosto = "/usr/local/share/wlhiiri/sanat";
 
@@ -242,6 +241,11 @@ int main(int argc, char** argv) {
 	hiiri_laita(hiiri_fd, EV_KEY, BTN_LEFT, 1);
 	hiiri_laita(hiiri_fd, EV_SYN, SYN_REPORT, 0);
 	hiiri_laita(hiiri_fd, EV_KEY, BTN_LEFT, 0);
+	hiiri_laita(hiiri_fd, EV_SYN, SYN_REPORT, 0);
+    }
+    if (hiiri_sivuun) {
+	usleep(100000); // jotta klikkaus ehtii vapautua
+	hiiri_laita(hiiri_fd, EV_REL, REL_X, xres);
 	hiiri_laita(hiiri_fd, EV_SYN, SYN_REPORT, 0);
     }
 

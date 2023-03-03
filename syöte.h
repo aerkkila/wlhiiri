@@ -54,8 +54,13 @@ static void kb_key_kutsu(void* data, struct wl_keyboard* wlkb, uint32_t serial,
 	    case XKB_KEY_Return:
 		käsittele_syötetty(syöte);
 		syöte[isyöte=0] = '\0';
-		//jatkakoon = 0;
 		return;
+	    case XKB_KEY_Down:
+	    case XKB_KEY_Up:
+		käsittele_syötetty(syöte);
+		syöte[isyöte=0] = '\0';
+		hiiri_sivuun = 1;
+		break;
 	    case XKB_KEY_Escape:
 		jatkakoon = 0;
 		break;
