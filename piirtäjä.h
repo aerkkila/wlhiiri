@@ -39,7 +39,7 @@ static struct wl_buffer* kiinnitä_kuva() {
 static void alusta_teksti() {
     assert(!FT_Init_FreeType(&library));
     assert(!FT_New_Face(library, "/usr/share/fonts/liberation/LiberationMono-Regular.ttf", 0, &face));
-    assert(!FT_Set_Pixel_Sizes(face, 0, 32)); // TODO
+    assert(!FT_Set_Pixel_Sizes(face, 0, 25)); // TODO
 }
 
 static void no_niin_ja_laitapas_nyt_sitten_teksti_vaikka_tuohon(const char* teksti, int y, int x) {
@@ -92,7 +92,7 @@ static int ykoord(int n) {
 
 static void piirrä() {
     for(int i=0; i<kuvan_koko; i+=4)
-	*(int*)(kuva+i) = 0x00000000;
+	*(int*)(kuva+i) = 0xb0000000;
 
     int asc = face->size->metrics.ascender/64,
 	xdiff = xres/xhila,

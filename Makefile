@@ -23,7 +23,7 @@ main.out: main.c piirtäjä.h xdg-shell.c xdg-shell.h syöte.h
 install: main.out
 	cp $< $(prefix)/bin/wlhiiri
 	chmod +s $(prefix)/bin/wlhiiri
-	mkdir $(prefix)/share/wlhiiri
+	mkdir -p $(prefix)/share/wlhiiri
 	cp sanat $(prefix)/share/wlhiiri/
 
 uninstall:

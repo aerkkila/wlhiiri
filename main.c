@@ -28,7 +28,7 @@ struct wl_callback*   framekutsuja;
 
 int saa_piirtää, xres=300, yres=300, muuttui, hiiri_fd, verbose;
 volatile int jatkakoon = 1;
-int xhila=18, yhila=13, xyhila, *osumat;
+int xhila=22, yhila=20, xyhila, *osumat;
 const char** sanat;
 int kuvan_koko; // const paitsi funktiossa kiinnitä_kuva
 const int hmin = 36, wmin = 36;
@@ -181,8 +181,9 @@ int main(int argc, char** argv) {
     alusta_näppäimistö();
     alusta_kursori();
 
-    int kokonaan = 2;
+    int piirrä_uudesti = 1;
     pthread_t säie;
+    alusta_hiiri(hiiri_fd);
     while (jatkakoon && wl_display_dispatch(wl) > 0) { // tämä kutsunee kuuntelijat ja tekee poll-asian
 	if (hiireksi_x >= 0) {
 	    short yx[] = {hiireksi_y, hiireksi_x};
@@ -190,16 +191,17 @@ int main(int argc, char** argv) {
 	    hiireksi_x = -1;
 	}
 	usleep(1000000/50);
-	if(!saa_piirtää) continue;
+	if(!saa_piirtää)
+	    continue;
 	saa_piirtää = 0;
-	if(kokonaan) {
+	puts("saa piirtää");
+	if(piirrä_uudesti) {
+	    puts("piirretään");
 	    piirrä();
 	    wl_surface_damage_buffer(surface, 0, 0, xres, yres);
 	    wl_surface_attach(surface, puskuri, 0, 0); // tämä aina vapautuu automaattisesti
 	    wl_surface_commit(surface);
-	    if(kokonaan == 2) // vain ensimmäisellä kierroksella
-		alusta_hiiri(hiiri_fd);
-	    kokonaan = 0;
+	    piirrä_uudesti = 0;
 	}
     }
     pthread_join(säie, NULL);
