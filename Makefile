@@ -20,7 +20,10 @@ wlr-output-management-unstable-v1.h:
 main.out: main.c piirtäjä.h xdg-shell.c xdg-shell.h syöte.h
 	gcc -Wall -g -o $@ $< ${src} ${libs} `pkg-config --cflags --libs freetype2`
 
-install: main.out
+sanat: luo_sanat.pl
+	./luo_sanat.pl LICENSE > sanat
+
+install: main.out sanat
 	cp $< $(prefix)/bin/wlhiiri
 	chmod +s $(prefix)/bin/wlhiiri
 	mkdir -p $(prefix)/share/wlhiiri
