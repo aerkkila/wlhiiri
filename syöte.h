@@ -8,7 +8,7 @@ static int toistonopeus, toistoviive;
 
 static short hiireksi_x=-1, hiireksi_y=-1;
 
-void käsittele_syötetty(char* syöte) {
+static void klikkaus(char* syöte) {
     for(int i=0; i<xyhila; i++)
 	if(!strcmp(sanat[i], syöte)) {
 	    hiireksi_x = xkoord(i);
@@ -37,41 +37,39 @@ static void kb_key_kutsu(void* data, struct wl_keyboard* wlkb, uint32_t serial,
     näpp += 8;
     static char syöte[64];
     static int isyöte;
-    char puskuri[32];
+    char merkki[32];
     const xkb_keysym_t* syms_out;
     int ival;
     ival = xkb_state_key_get_syms(xkbtila, näpp, &syms_out);
     if(!tila)
 	return;
-    if(!xkb_state_key_get_utf8(xkbtila, näpp, puskuri, sizeof(puskuri))) // ei lue esim. nuolinäppäimiä
+    if(!xkb_state_key_get_utf8(xkbtila, näpp, merkki, sizeof(merkki))) // ei lue esim. nuolinäppäimiä
 	;
     for(int i=0; i<ival; i++) {
 	switch(syms_out[i]) {
 	    case XKB_KEY_BackSpace:
 		while(isyöte && (syöte[--isyöte] & (3<<6)) == 3<<6);
 		syöte[isyöte] = '\0';
-		goto laita;
+		return;
 	    case XKB_KEY_Return:
-		käsittele_syötetty(syöte);
+		klikkaus(syöte);
 		syöte[isyöte=0] = '\0';
 		return;
 	    case XKB_KEY_Down:
 	    case XKB_KEY_Up:
-		käsittele_syötetty(syöte);
+		klikkaus(syöte);
 		syöte[isyöte=0] = '\0';
 		hiiri_sivuun = 1;
-		break;
+		return;
 	    case XKB_KEY_Escape:
 		jatkakoon = 0;
-		break;
+		return;
 	}
     }
-    if(0 <= puskuri[0] && puskuri[0] < ' ')
+    if(0 <= merkki[0] && merkki[0] < ' ')
 	return;
-    strcpy(syöte+isyöte, puskuri);
-    isyöte += strlen(puskuri);
-laita:
-    //printf("„%s“, tila = %u, syöte = „%s“\n", puskuri, tila, syöte);
+    strcpy(syöte+isyöte, merkki);
+    isyöte += strlen(merkki);
 }
 static void kb_repeat_kutsu(void* data, struct wl_keyboard* wlkb, int32_t nopeus, int32_t viive) {
     toistonopeus = nopeus;

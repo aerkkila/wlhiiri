@@ -28,6 +28,7 @@ static struct wl_buffer* kiinnitä_kuva() {
     assert(fd >= 0);
     kuva = mmap(NULL, (size_t)kuvan_koko, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if(kuva == MAP_FAILED) err(1, "mmap");
+    piirrä_uudesti = 1;
 
     struct wl_shm_pool* pool  = wl_shm_create_pool(wlshm, fd, kuvan_koko);
     struct wl_buffer* puskuri = wl_shm_pool_create_buffer(pool, 0, xres, yres, xres*4, WL_SHM_FORMAT_ARGB8888);
@@ -39,7 +40,7 @@ static struct wl_buffer* kiinnitä_kuva() {
 static void alusta_teksti() {
     assert(!FT_Init_FreeType(&library));
     assert(!FT_New_Face(library, "/usr/share/fonts/liberation/LiberationMono-Regular.ttf", 0, &face));
-    assert(!FT_Set_Pixel_Sizes(face, 0, fonttikoko)); // TODO
+    assert(!FT_Set_Pixel_Sizes(face, 0, fonttikoko));
 }
 
 static void no_niin_ja_laitapas_nyt_sitten_teksti_vaikka_tuohon(const char* teksti, int y, int x) {

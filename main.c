@@ -71,9 +71,9 @@ static void xdgconfigure(void* data, struct xdg_surface* surf, uint32_t serial) 
     if(!puskuri)
 	puskuri = kiinnitä_kuva();
     //wl_buffer_add_listener(puskuri, &wl_buf_lis, NULL);
-    piirrä();
     wl_surface_attach(surface, puskuri, 0, 0);
     wl_surface_commit(surface);
+    //piirrä_uudesti = 1;
 }
 static struct xdg_surface_listener xdgsurflistener = {
     .configure = xdgconfigure,
