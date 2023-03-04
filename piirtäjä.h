@@ -111,3 +111,27 @@ static void piirrä() {
 	    no_niin_ja_laitapas_nyt_sitten_teksti_vaikka_tuohon(sanat[j*xhila+i], jkoord, i*xdiff);
 	}
 }
+
+static void siirrä_kuvaa_x(int n) {
+    kuvan_sij_x += n;
+    void* apu = malloc(xres*yres*4);
+    memcpy(apu, kuva, xres*yres*4);
+    for(int i=0; i<yres; i++)
+	memcpy(kuva+(i*xres+n)*4, apu+i*xres*4, (xres-n)*4);
+    free(apu);
+    wl_surface_damage_buffer(surface, 0, 0, xres, yres);
+    wl_surface_attach(surface, puskuri, 0, 0); // tämä aina vapautuu automaattisesti
+    wl_surface_commit(surface);
+}
+
+static void siirrä_kuvaa_y(int n) {
+    kuvan_sij_y += n;
+    void* apu = malloc(xres*yres*4);
+    memcpy(apu, kuva, xres*yres*4);
+    for(int i=0; i<yres-n; i++)
+	memcpy(kuva+(n+i)*xres*4, apu+i*xres*4, xres*4);
+    free(apu);
+    wl_surface_damage_buffer(surface, 0, 0, xres, yres);
+    wl_surface_attach(surface, puskuri, 0, 0); // tämä aina vapautuu automaattisesti
+    wl_surface_commit(surface);
+}

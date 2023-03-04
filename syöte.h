@@ -11,8 +11,8 @@ static short hiireksi_x=-1, hiireksi_y=-1;
 static void klikkaus(char* syöte) {
     for(int i=0; i<xyhila; i++)
 	if(!strcmp(sanat[i], syöte)) {
-	    hiireksi_x = xkoord(i);
-	    hiireksi_y = ykoord(i);
+	    hiireksi_x = xkoord(i) + kuvan_sij_x;
+	    hiireksi_y = ykoord(i) + kuvan_sij_y;
 	    klikattakoon = 1;
 	    return; }
 }
@@ -63,6 +63,12 @@ static void kb_key_kutsu(void* data, struct wl_keyboard* wlkb, uint32_t serial,
 		return;
 	    case XKB_KEY_Escape:
 		jatkakoon = 0;
+		return;
+	    case XKB_KEY_plus:
+		siirrä_kuvaa_y(5);
+		return;
+	    case XKB_KEY_equal:
+		siirrä_kuvaa_x(10);
 		return;
 	}
     }

@@ -27,7 +27,7 @@ struct wl_callback*   framekutsuja;
 
 int saa_piirtää, xres=300, yres=300, muuttui, hiiri_fd, verbose;
 volatile int jatkakoon = 1;
-int xhila=22, yhila=20, xyhila, fonttikoko = 24;
+int xhila=22, yhila=20, xyhila, fonttikoko = 24, kuvan_sij_y, kuvan_sij_x;
 const char** sanat;
 int kuvan_koko; // const paitsi funktiossa kiinnitä_kuva
 const int hmin = 36, wmin = 36;
@@ -198,10 +198,10 @@ int main(int argc, char** argv) {
 	    hiireksi_x = -1;
 	}
 	usleep(1000000/50);
-	if(!saa_piirtää)
+	if (!saa_piirtää)
 	    continue;
 	saa_piirtää = 0;
-	if(piirrä_uudesti) {
+	if (piirrä_uudesti) {
 	    piirrä();
 	    wl_surface_damage_buffer(surface, 0, 0, xres, yres);
 	    wl_surface_attach(surface, puskuri, 0, 0); // tämä aina vapautuu automaattisesti

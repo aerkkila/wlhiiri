@@ -24,3 +24,5 @@ Type the text and
 - **Return** to click on the spot of the text.
 - **Arrow Up / Arrow Down** to click on the spot of the text and then move cursor to right border of the screen.
 - **Esc** to exit.
+- **plus** to move texts downwards.
+- **equal** to move texts right.
