@@ -191,12 +191,15 @@ int main(int argc, char** argv) {
 
     pthread_t säie;
     alusta_hiiri(hiiri_fd);
-    while (jatkakoon && wl_display_dispatch(wl) > 0) { // tämä kutsunee kuuntelijat ja tekee poll-asian
+    /* wl_display_roundtrip on kuin wl_display_dispatch, mutta ei blokkaa. */
+    while (jatkakoon && wl_display_roundtrip(wl) > 0) {
 	if (hiireksi_x >= 0) {
 	    short yx[] = {hiireksi_y, hiireksi_x};
 	    pthread_create(&säie, NULL, hiiri, &yx);
 	    hiireksi_x = -1;
 	}
+	if (painettu && on_aika_toistaa())
+	    kb_key_kutsu(NULL, NULL, 0, 0, KÄYTÄ_VANHAA_NÄPPÄINTÄ, 1);
 	usleep(1000000/50);
 	if (!saa_piirtää)
 	    continue;

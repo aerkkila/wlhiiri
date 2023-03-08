@@ -1,12 +1,35 @@
 #include <xkbcommon/xkbcommon.h>
+#include <sys/time.h>
 
 static struct wl_keyboard* näppäimistö;
 static struct xkb_context* xkbasiayhteys;
 static struct xkb_state* xkbtila;
 static struct xkb_keymap* keymap;
-static int toistonopeus, toistoviive;
+static long long toistoväli_µs, toistoviive_µs, painohetki;
+static char painettu, toisto_alkanut;
 
 static short hiireksi_x=-1, hiireksi_y=-1;
+
+#define KÄYTÄ_VANHAA_NÄPPÄINTÄ -1
+
+static long long timenow_µs() {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (long long)tv.tv_sec*1000000 + tv.tv_usec;
+}
+
+static int on_aika_toistaa() {
+    static long long viimetoisto;
+    long long nyt = timenow_µs();
+    int ret =
+	(!toisto_alkanut && nyt - painohetki > toistoviive_µs) ||
+	(toisto_alkanut  && nyt - viimetoisto > toistoväli_µs);
+    if (ret) {
+	viimetoisto = nyt;
+	toisto_alkanut = 1;
+    }
+    return ret;
+}
 
 static void klikkaus(char* syöte) {
     for(int i=0; i<xyhila; i++)
@@ -35,16 +58,22 @@ static void kb_keymap_kutsu(void* data, struct wl_keyboard* wlkb, uint32_t muoto
 static void kb_key_kutsu(void* data, struct wl_keyboard* wlkb, uint32_t serial,
 			 uint32_t aika, uint32_t näpp, uint32_t tila) {
     näpp += 8;
+    painettu = tila;
     static char syöte[64];
     static int isyöte;
-    char merkki[32];
-    const xkb_keysym_t* syms_out;
-    int ival;
-    ival = xkb_state_key_get_syms(xkbtila, näpp, &syms_out);
-    if(!tila)
+    static char merkki[32];
+    static const xkb_keysym_t* syms_out;
+    static int ival;
+    if(!tila) {
+	toisto_alkanut = 0;
 	return;
-    if(!xkb_state_key_get_utf8(xkbtila, näpp, merkki, sizeof(merkki))) // ei lue esim. nuolinäppäimiä
-	;
+    }
+    if (näpp-8 !=  KÄYTÄ_VANHAA_NÄPPÄINTÄ) {
+	ival = xkb_state_key_get_syms(xkbtila, näpp, &syms_out);
+	if(!xkb_state_key_get_utf8(xkbtila, näpp, merkki, sizeof(merkki))) // ei lue esim. nuolinäppäimiä
+	    ;
+	painohetki = timenow_µs();
+    }
     for(int i=0; i<ival; i++) {
 	switch(syms_out[i]) {
 	    case XKB_KEY_BackSpace:
@@ -78,8 +107,8 @@ static void kb_key_kutsu(void* data, struct wl_keyboard* wlkb, uint32_t serial,
     isyöte += strlen(merkki);
 }
 static void kb_repeat_kutsu(void* data, struct wl_keyboard* wlkb, int32_t nopeus, int32_t viive) {
-    toistonopeus = nopeus;
-    toistoviive = viive;
+    toistoväli_µs = nopeus * 1000;
+    toistoviive_µs = viive * 1000;
 }
 static struct wl_keyboard_listener näppäimistökuuntelija = {
     .keymap = kb_keymap_kutsu,
