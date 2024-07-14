@@ -3,6 +3,7 @@
 #include <ft2build.h>
 #include <utf8proc.h>
 #include FT_FREETYPE_H
+#include "fonttitiedosto.h"
 
 FT_Library library;
 FT_Face face;
@@ -39,7 +40,7 @@ static struct wl_buffer* kiinnitä_kuva() {
 
 static void alusta_teksti() {
     assert(!FT_Init_FreeType(&library));
-    assert(!FT_New_Face(library, "/usr/share/fonts/liberation/LiberationMono-Regular.ttf", 0, &face));
+    assert(!FT_New_Face(library, fonttitiedosto, 0, &face));
     assert(!FT_Set_Pixel_Sizes(face, 0, fonttikoko));
 }
 

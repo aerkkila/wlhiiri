@@ -11,7 +11,12 @@ xdg-shell.h: $(xdg)
 xdg-shell.c: $(xdg)
 	wayland-scanner private-code $< $@
 
-main.out: main.c piirtäjä.h xdg-shell.c xdg-shell.h syöte.h
+fonttitiedosto.h:
+	printf "static const char* fonttitiedosto = %s;\n" \
+		`fc-match -v monospace | sed --silent 's/\W*file:\W*\(\"[^\"]*\"\).*/\1/p'` \
+		> fonttitiedosto.h
+
+main.out: main.c piirtäjä.h xdg-shell.c xdg-shell.h syöte.h fonttitiedosto.h
 	gcc -Wall -g -o $@ $< ${src} ${libs} `pkg-config --cflags --libs freetype2`
 
 sanat: luo_sanat.pl

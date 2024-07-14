@@ -89,7 +89,7 @@ static struct xdg_wm_base_listener xdg_base_lis = {
 static void topconfigure(void* data, struct xdg_toplevel* top, int32_t w, int32_t h, struct wl_array* states) {
     muuttui = xres != w || yres != h;
     xres = w<wmin? wmin: w;
-    yres = h<hmin? hmin: h; 
+    yres = h<hmin? hmin: h;
 }
 static void xdgclose(void* data, struct xdg_toplevel* top) {
     jatkakoon = 0;
@@ -105,7 +105,7 @@ static struct xdg_toplevel_listener xdgtoplistener = {
 static void registry_handler(void* data, struct wl_registry* reg, uint32_t id,
 			     const char* interface, uint32_t version) {
     //printf("registry_handler %s, %u\n", interface, id);
-    sitomiset { 
+    sitomiset {
 	sido(wl_compositor, kokoaja, 4);
 	sido(xdg_wm_base, xdg_base, 1);
 	xdg_wm_base_add_listener(xdg_base, &xdg_base_lis, NULL);
@@ -190,7 +190,7 @@ int main(int argc, char** argv) {
     alusta_kursori();
 
     pthread_t säie;
-    int käytetään_säiettä = 0;
+    char käytetään_säiettä = 0;
     alusta_hiiri(hiiri_fd);
     /* wl_display_roundtrip on kuin wl_display_dispatch, mutta ei blokkaa. */
     while (jatkakoon && wl_display_roundtrip(wl) > 0) {
@@ -199,6 +199,7 @@ int main(int argc, char** argv) {
 	    pthread_create(&säie, NULL, hiiri, &yx);
 	    käytetään_säiettä = 1;
 	    hiireksi_x = -1;
+	    is_thread = 1;
 	}
 	if (painettu && on_aika_toistaa())
 	    kb_key_kutsu(NULL, NULL, 0, 0, KÄYTÄ_VANHAA_NÄPPÄINTÄ, 1);
@@ -286,7 +287,7 @@ int REL_YX[] = {REL_Y, REL_X};
 
 void* hiiri(void* args) {
     short* yx = args;
-    hiiri_laita(hiiri_fd, EV_REL, REL_X, 25); // TODO: saisiko sijainnin suoraan
+    hiiri_laita(hiiri_fd, EV_REL, REL_X, 25); // saisiko sijainnin suoraan
     hiiri_laita(hiiri_fd, EV_SYN, SYN_REPORT, 0);
     while (hiiren_yx[0] < 0 || hiiren_yx[1] < 0)
 	usleep(1000000/2);
