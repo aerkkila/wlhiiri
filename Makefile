@@ -1,6 +1,6 @@
 src = xdg-shell.c
 xdg = /usr/share/wayland-protocols/stable/xdg-shell/xdg-shell.xml
-libs = -lwayland-client -lwlroots -lutf8proc -lxkbcommon
+libs = -lwayland-client -lutf8proc -lxkbcommon
 prefix = /usr/local
 
 all: main.out

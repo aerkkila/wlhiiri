@@ -84,7 +84,6 @@ static void kb_key_kutsu(void* data, struct wl_keyboard* wlkb, uint32_t serial,
 		klikkaus(syöte);
 		syöte[isyöte=0] = '\0';
 		return;
-	    case XKB_KEY_Down:
 	    case XKB_KEY_Up:
 		klikkaus(syöte);
 		syöte[isyöte=0] = '\0';
@@ -94,9 +93,11 @@ static void kb_key_kutsu(void* data, struct wl_keyboard* wlkb, uint32_t serial,
 		jatkakoon = 0;
 		return;
 	    case XKB_KEY_plus:
+	    case XKB_KEY_Down:
 		siirrä_kuvaa_y(5);
 		return;
 	    case XKB_KEY_equal:
+	    case XKB_KEY_Right:
 		siirrä_kuvaa_x(10);
 		return;
 	}

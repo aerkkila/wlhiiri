@@ -190,12 +190,14 @@ int main(int argc, char** argv) {
     alusta_kursori();
 
     pthread_t säie;
+    int käytetään_säiettä = 0;
     alusta_hiiri(hiiri_fd);
     /* wl_display_roundtrip on kuin wl_display_dispatch, mutta ei blokkaa. */
     while (jatkakoon && wl_display_roundtrip(wl) > 0) {
 	if (hiireksi_x >= 0) {
 	    short yx[] = {hiireksi_y, hiireksi_x};
 	    pthread_create(&säie, NULL, hiiri, &yx);
+	    käytetään_säiettä = 1;
 	    hiireksi_x = -1;
 	}
 	if (painettu && on_aika_toistaa())
@@ -212,7 +214,10 @@ int main(int argc, char** argv) {
 	    piirrä_uudesti = 0;
 	}
     }
-    pthread_join(säie, NULL);
+    if (käytetään_säiettä) {
+	pthread_join(säie, NULL);
+	käytetään_säiettä = 0;
+    }
 
     munmap(tied, sanatkoko);
     close(fd);
